@@ -16,12 +16,12 @@ if k == ord('s'):
 else:
     cv2.destroyAllWindows()
 
-pts1 = np.float32([[56, 65], [368, 52], [28, 387], [389, 390]])
-pts2 = np.float32([[0, 0], [300, 0], [0, 300], [300, 300]])
+pts1 = np.float32([[1885, 1921], [1849, 909], [2893, 1881], [2853, 885]])
+pts2 = np.float32([[0, 0], [800, 0], [0, 800], [800, 800]])
 
 M = cv2.getPerspectiveTransform(pts1,pts2)
 
-result_img = cv2.warpPerspective(result_img,M,(300,300))
+result_img = cv2.warpPerspective(result_img,M,(800,800))
 
 print(result_img)
 
