@@ -12,8 +12,8 @@ function [beam_mat] = beam(diameter, charge, pulse_len, energy, distribution)
     %                 One of flat, Gauss, or linear. Represented as characters
     %                 'f', 'G', or 'l'
     % Outputs:
-    %   beam_mat: a 3 dimensional matrix made up of nanosecond slices of the
-    %             electron spatial distribution
+    %   beam_mat: a 2 dimensional matrix made up of the electron spatial
+    %             distribution
 
 
 end

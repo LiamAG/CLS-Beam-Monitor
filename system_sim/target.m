@@ -12,8 +12,7 @@ function [photon_mat] = target(beam_mat, tau_fast, tau_slow, photon_conversion)
     %                      with units of photons/keV
     % Outputs:
     %   photon_mat: A matrix representing the photons output from the interaction
-    %   in nanosecond time slices with the other two dimensions containing the
-    %   spatial light intensity distribution
+    %   containing the spatial light intensity distribution
 
     % TODO: Figure out how the decay time can be properly used
 
