@@ -1,0 +1,171 @@
+%%  Simulation Script
+
+%##############PARAMETERS###############
+% photons
+% relative_illumination
+% diameter
+% charge
+% pulse_len
+% energy
+crystal_param = .5;
+diameter = 4;   %mm
+working_distance = 5; %mm
+focal = 3; %mm
+
+
+x1 = linspace(-5,5,100);
+y1 = linspace(-5,5,100);
+    
+[x,y] = meshgrid(x1,y1);
+
+
+%################Stage One########################
+%Using 3 different types of distributions of electrons (linear, flat and
+%normal).
+
+
+% standard distribution approximately 1/6 of the diameter, 
+sigma = diameter/6;
+% this corresponds to 3 standard deviations of the radius inside the circle (99.7%)
+
+%original normal electron distribution
+Norm = (1/(2*pi*sigma^2)*exp(-(x.^2 + y.^2)/(2*sigma^2)));
+
+%Original Flat electron distribution
+Flat = zeros(length(x1),length(y1));
+
+for ind1 = 1:length(x1)
+    for ind2 = 1:length(y1)
+        if sqrt((x(ind1,ind2))^2 + (y(ind1,ind2))^2) < diameter/2
+        Flat(ind1,ind2) = 4/(pi*diameter^2);
+        end
+    end
+end
+
+%Original Linear Electron Distributions (conic distribution)
+Lin = zeros(length(x1),length(y1));
+
+for ind3 = 1:length(x1)
+    for ind4 = 1:length(y1)
+        if sqrt((x(ind3,ind4))^2 + (y(ind3,ind4))^2) < diameter/2
+        Lin(ind3,ind4) = (24/(pi*diameter^3))*(-sqrt((x(ind3,ind4))^2 + (y(ind3,ind4))^2) + diameter/2);
+        end
+    end
+end
+
+figure(1)
+surf(x,y,Flat)
+title('Flat electron distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(2)
+surf(x,y,Norm)
+title('Normal electron distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(3)
+surf(x,y,Lin)
+title('Linear electron distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+%################Stage Two########################
+%Once electrons hit the crystal, photons will be ejected at each point on
+%the crystal proportional to the electron energy
+
+%Normal Photon Distribution 
+Norm_photon = Norm*crystal_param;
+
+%Flat Photon Distribution
+Flat_photon = Flat*crystal_param;
+
+%Linear Photon Distribution
+Lin_photon = Lin*crystal_param;
+
+figure(4)
+surf(x,y,Flat_photon)
+title('Flat Photon distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(5)
+surf(x,y,Norm_photon)
+title('Normal Photon distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(6)
+surf(x,y,Lin_photon)
+title('Linear Photon distribution')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+%################Stage Three########################
+%Once the ejected photons leave the crystal they travel towards a lens
+%which magnifies the image (collection of photons). Mathematically this can
+%corrspond to a scaling of each independent variable in our distributions.
+%(x -> x/mag, y -> y/mag). Due to symmetry the flip of the image will not
+%change the distributions
+
+
+%Using thin lens equation we can find the distance between the detector and
+%lense
+detector_lense_distance = (working_distance*focal)/(working_distance - focal); %milimeters
+    
+%total magnification
+mag = -detector_lense_distance/working_distance;
+
+%original normal electron distribution
+Norm_photon_mag = crystal_param*(1/(2*pi*sigma^2)*exp(-((x/mag).^2 + (y/mag).^2)/(2*sigma^2)));
+
+
+%Magnified Flat Photon distribution
+Flat_photon_mag = zeros(length(x1),length(y1));
+
+for ind5 = 1:length(x1)
+    for ind6 = 1:length(y1)
+        if sqrt((x(ind5,ind6)/mag)^2 + (y(ind5,ind6)/mag)^2) < diameter/2
+        Flat_photon_mag(ind5,ind6) = crystal_param*4/(pi*diameter^2);
+        end
+    end
+end
+
+%Original Linear Electron Distributions (conic distribution)
+Lin_photon_mag = zeros(length(x1),length(y1));
+
+for ind7 = 1:length(x1)
+    for ind8 = 1:length(y1)
+        if sqrt((x(ind7,ind8)/mag)^2 + (y(ind7,ind8)/mag)^2) < diameter/2
+        Lin_photon_mag(ind7,ind8) = crystal_param*(24/(pi*diameter^3))*(-sqrt(((x(ind7,ind8))/mag)^2 + ((y(ind7,ind8))/mag)^2) + diameter/2);
+        end
+    end
+end
+
+figure(7)
+surf(x,y,Flat_photon_mag)
+title('Flat Photon distribution (Magnified) at detector')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(8)
+surf(x,y,Norm_photon_mag)
+title('Normal Photon distribution (Magnified) at detector')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
+
+figure(9)
+surf(x,y,Lin_photon_mag)
+title('Linear Photon distribution (Magnified) at detector')
+xlabel('X')
+ylabel('Y')
+zlabel('Intensity')
