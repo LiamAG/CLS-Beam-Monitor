@@ -3,18 +3,19 @@ import numpy as np
 import epics
 import transform
 from timeit import default_timer as timer
-import inotify as i
+import inotify
 import sys
 
 
-def diff_image(background, image, output_dir):
+def diff_image(background, image):
     diffed_img = transform.brightness_difference(image, background)
     return diffed_img
 
 
-def map_false_colour(image, output_dir=None):
+def map_false_colour(image):
     false_colour = cv2.applyColorMap(image, cv2.COLORMAP_JET)
     return false_colour
+
 
 def get_moments(image):
     M = cv2.moments(image)
@@ -30,7 +31,8 @@ def centroid(image):
     image = cv2.circle(image, (cX, cY), 20, (255, 102, 255), 3)
     return image
 
-def std_devs(image, M):
+
+def std_devs(image):
     M = get_moments(image)
     centroidX = int(M["m10"] / M["m00"])
     centroidY = int(M["m01"] / M["m00"])
@@ -47,11 +49,46 @@ def std_devs(image, M):
     image = cv2.line(image, (centroidX + 30, centroidY - 2*int(stddevY)), (centroidX - 30, centroidY - 2*int(stddevY)), (255, 102, 255), 3)
     return image
 
+
 if __name__ == "__main__":
 
+    if len(sys.argv != 3):
+        print("Only watched directory and output directory should be included as input")
+        return
+    directory = sys.argv[1]
+    output_dir = sys.argv[2]  # Save processed images in a new directory for now, can save as EPICS PVs in production
+    # Hardcode processing layer booleans for now
+    # Hopefully these will pull from EPICS PVs in production
     background_sub = True
     map_colours = True
     draw_centroid = True
     draw_std_devs = True
+    background_image_filepath = "Stephen change this to your background image file"
+    
+    # Create inotify adapter and add a watch on target image directory
+    i = inotify.adapters.Inotify()
+    i.add_watch(directory)
 
+    while True:
+        for event in i.event_gen(yield_nones=False):
+            (_, type_names, path, filename) = event
+            logger.debug(event)
+            # When a png file is created or moved to the directory, begin processing
+            if ("png" in filename) and (("IN_CLOSE_WRITE" in type_names) or ("IN_MOVED_TO" in type_names)):
+                # I will probably get the file naming wrong, play with it until it works on your end
+                # for now I'll just use filename to represent the image file
+                image = cv2.imread(filename)
+                background = cv2.imread(background_image_filepath)
 
+                # Run processing functions
+                if background_sub:
+                    image = diff_image(background, image)
+                if map_colours:
+                    image = map_false_colour(image)
+                if draw_centroid:
+                    image = centroid(image)
+                if draw_std_devs:
+                    image = std_devs(image)
+
+                print("Saving processed image in", output_dir)
+                cv2.imwrite(output_dir+ "/processed_" + filename)
