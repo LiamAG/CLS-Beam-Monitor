@@ -7,7 +7,7 @@ from epics import PV
 
 start = timer()
 
-img1 = cv2.imread('laser2.png', 0)
+img1 = cv2.imread('laser1.png', 0)
 img2 = cv2.imread('backround.png', 0)
 
 diffed_img = transform.brightness_difference(img1, img2)
@@ -19,6 +19,8 @@ cv2.imwrite('output_subtraction.png', diffed_img)
 #warped = transform.perspective_transform(diffed_img, pts)
 #print("Saving image as distortion_output.png.")
 #cv2.imwrite('output_distortion.png', warped)
+
+diffed_img = cv2.GaussianBlur(diffed_img, (5,5), 0)
 
 false_colour = cv2.applyColorMap(diffed_img, cv2.COLORMAP_JET)
 print("Saving image as output_false_colour.png.")
@@ -32,14 +34,14 @@ stddevY = np.sqrt(int(M["mu02"] / M["m00"]))
 print("Coordinates of centroid (X,Y): ", centroidX, " ", centroidY)
 print("Std. dev: (X,Y): ", stddevX, " ", stddevY)
 
-false_colour_centroid = cv2.circle(false_colour, (centroidX, centroidY), 20, (255, 102, 255), 3)
+false_colour_centroid = cv2.circle(false_colour, (centroidX, centroidY), 20, (255, 102, 255), 3) #plots the centroid as a circle
 
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + int(stddevX), centroidY + 30), (centroidX + int(stddevX), centroidY - 30), (255, 102, 255), 3)
+false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + int(stddevX), centroidY + 30), (centroidX + int(stddevX), centroidY - 30), (255, 102, 255), 3) #plots the first standard deviation from the centroid in x and y
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX - int(stddevX), centroidY + 30), (centroidX - int(stddevX), centroidY - 30), (255, 102, 255), 3)
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY + int(stddevY)), (centroidX - 30, centroidY + int(stddevY)), (255, 102, 255), 3)
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY - int(stddevY)), (centroidX - 30, centroidY - int(stddevY)), (255, 102, 255), 3)
 
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 2*int(stddevX), centroidY + 30), (centroidX + 2*int(stddevX), centroidY - 30), (255, 102, 255), 3)
+false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 2*int(stddevX), centroidY + 30), (centroidX + 2*int(stddevX), centroidY - 30), (255, 102, 255), 3) #plots the second standard deviation from the centroid in x and y
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX - 2*int(stddevX), centroidY + 30), (centroidX - 2*int(stddevX), centroidY - 30), (255, 102, 255), 3)
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY + 2*int(stddevY)), (centroidX - 30, centroidY + 2*int(stddevY)), (255, 102, 255), 3)
 false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY - 2*int(stddevY)), (centroidX - 30, centroidY - 2*int(stddevY)), (255, 102, 255), 3)

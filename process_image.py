@@ -3,13 +3,18 @@ import numpy as np
 import epics
 import transform
 from timeit import default_timer as timer
-import inotify
+import inotify.adapters
 import sys
 
 
 def diff_image(background, image):
     diffed_img = transform.brightness_difference(image, background)
     return diffed_img
+
+
+def smooth_image(image):
+    diffed_img = cv2.GaussianBlur(image, (5, 5), 0) #smoothing is a function of these values. potentially worth changing?
+    return smooth_image
 
 
 def map_false_colour(image):
@@ -52,14 +57,14 @@ def std_devs(image):
 
 if __name__ == "__main__":
 
-    if len(sys.argv != 3):
-        print("Only watched directory and output directory should be included as input")
-        return
+    if len(sys.argv) != 3:
+        sys.exit("Only watched directory and output directory should be included as input")
     directory = sys.argv[1]
     output_dir = sys.argv[2]  # Save processed images in a new directory for now, can save as EPICS PVs in production
     # Hardcode processing layer booleans for now
     # Hopefully these will pull from EPICS PVs in production
     background_sub = True
+    gaussian_smooth = True
     map_colours = True
     draw_centroid = True
     draw_std_devs = True
@@ -83,6 +88,8 @@ if __name__ == "__main__":
                 # Run processing functions
                 if background_sub:
                     image = diff_image(background, image)
+                if gaussian_smooth:
+                    image = smooth_image(image)
                 if map_colours:
                     image = map_false_colour(image)
                 if draw_centroid:
