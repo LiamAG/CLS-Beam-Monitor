@@ -1,32 +1,43 @@
 import cv2
 import numpy as np
 import epics
+import csv
+import os.path
 import transform
+from datetime import datetime
 from timeit import default_timer as timer
 from epics import PV
 
 start = timer()
 
-img1 = cv2.imread('laser1.png', 0)
-img2 = cv2.imread('backround.png', 0)
+img = cv2.imread('laser4.png', 0)
+background_img = cv2.imread('background.png', 0)
 
-diffed_img = transform.brightness_difference(img1, img2)
-print("Saving image as output_subtraction.png.")
-cv2.imwrite('output_subtraction.png', diffed_img)
+background_sub = True
+gaussian_smooth = True
+angle_correct = False
+map_colours = True
+draw_centroid_std_devs = True
 
-#pts = np.float32([[1849, 912], [2845, 882], [2889, 1880], [1887, 1918]]) #Point set for the printed target test image
-#pts = np.float32([[901, 803], [2217, 807], [747, 1393], [2385, 1393]]) #Point set for the Dental Clinic business card test image
-#warped = transform.perspective_transform(diffed_img, pts)
-#print("Saving image as distortion_output.png.")
-#cv2.imwrite('output_distortion.png', warped)
+if background_sub:
+    img = transform.brightness_difference(img, background_img)
+    print("Saving image as output_subtraction.png.")
+    cv2.imwrite('./Data/output_subtraction.png', img)
 
-diffed_img = cv2.GaussianBlur(diffed_img, (5,5), 0)
+if angle_correct:  # Uses a set of 4 pre-defined points to generate a rectangular ROI
+    pts = np.float32([[1849, 912], [2845, 882], [2889, 1880], [1887, 1918]]) # Point set for the printed target test image
+    img = transform.perspective_transform(img, pts)
+    print("Saving image as distortion_output.png.")
+    cv2.imwrite('./Data/output_distortion.png', img)
 
-false_colour = cv2.applyColorMap(diffed_img, cv2.COLORMAP_JET)
-print("Saving image as output_false_colour.png.")
-cv2.imwrite('output_false_colour.png', false_colour)
+if gaussian_smooth:
+    img = cv2.GaussianBlur(img, (5,5), 0)
+    print("Saving image as output_smoothed.png.")
+    cv2.imwrite('./Data/output_smoothed.png', img)
 
-M = cv2.moments(diffed_img)
+# end of processing, start analysis functions:
+
+M = cv2.moments(img)
 centroidX = int(M["m10"] / M["m00"])
 centroidY = int(M["m01"] / M["m00"])
 stddevX = np.sqrt(int(M["mu20"] / M["m00"]))
@@ -34,21 +45,41 @@ stddevY = np.sqrt(int(M["mu02"] / M["m00"]))
 print("Coordinates of centroid (X,Y): ", centroidX, " ", centroidY)
 print("Std. dev: (X,Y): ", stddevX, " ", stddevY)
 
-false_colour_centroid = cv2.circle(false_colour, (centroidX, centroidY), 20, (255, 102, 255), 3) #plots the centroid as a circle
+modified_img = img  # apply filters/overlays to the processed image without losing it
 
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + int(stddevX), centroidY + 30), (centroidX + int(stddevX), centroidY - 30), (255, 102, 255), 3) #plots the first standard deviation from the centroid in x and y
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX - int(stddevX), centroidY + 30), (centroidX - int(stddevX), centroidY - 30), (255, 102, 255), 3)
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY + int(stddevY)), (centroidX - 30, centroidY + int(stddevY)), (255, 102, 255), 3)
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY - int(stddevY)), (centroidX - 30, centroidY - int(stddevY)), (255, 102, 255), 3)
+if map_colours:
+    modified_img = cv2.applyColorMap(modified_img, cv2.COLORMAP_JET)
+    print("Saving image as output_false_colour.png.")
+    cv2.imwrite('./Data/output_false_colour.png', modified_img)
 
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 2*int(stddevX), centroidY + 30), (centroidX + 2*int(stddevX), centroidY - 30), (255, 102, 255), 3) #plots the second standard deviation from the centroid in x and y
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX - 2*int(stddevX), centroidY + 30), (centroidX - 2*int(stddevX), centroidY - 30), (255, 102, 255), 3)
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY + 2*int(stddevY)), (centroidX - 30, centroidY + 2*int(stddevY)), (255, 102, 255), 3)
-false_colour_centroid = cv2.line(false_colour_centroid, (centroidX + 30, centroidY - 2*int(stddevY)), (centroidX - 30, centroidY - 2*int(stddevY)), (255, 102, 255), 3)
+if draw_centroid_std_devs:
+    modified_img = cv2.circle(modified_img, (centroidX, centroidY), 20, (255, 102, 255), 3) # plots the centroid as a circle
 
-print("Saving image as output_false_colour_centroid.png.")
-cv2.imwrite('output_false_colour_centroid.png', false_colour_centroid)
+    modified_img = cv2.line(modified_img, (centroidX + int(stddevX), centroidY + 30), (centroidX + int(stddevX), centroidY - 30), (255, 102, 255), 3) # plots the first standard deviation from the centroid in x and y
+    modified_img = cv2.line(modified_img, (centroidX - int(stddevX), centroidY + 30), (centroidX - int(stddevX), centroidY - 30), (255, 102, 255), 3)
+    modified_img = cv2.line(modified_img, (centroidX + 30, centroidY + int(stddevY)), (centroidX - 30, centroidY + int(stddevY)), (255, 102, 255), 3)
+    modified_img = cv2.line(modified_img, (centroidX + 30, centroidY - int(stddevY)), (centroidX - 30, centroidY - int(stddevY)), (255, 102, 255), 3)
+
+    modified_img = cv2.line(modified_img, (centroidX + 2 * int(stddevX), centroidY + 30), (centroidX + 2 * int(stddevX), centroidY - 30), (255, 102, 255), 3) # plots the second standard deviation from the centroid in x and y
+    modified_img = cv2.line(modified_img, (centroidX - 2 * int(stddevX), centroidY + 30), (centroidX - 2 * int(stddevX), centroidY - 30), (255, 102, 255), 3)
+    modified_img = cv2.line(modified_img, (centroidX + 30, centroidY + 2 * int(stddevY)), (centroidX - 30, centroidY + 2 * int(stddevY)), (255, 102, 255), 3)
+    modified_img = cv2.line(modified_img, (centroidX + 30, centroidY - 2 * int(stddevY)), (centroidX - 30, centroidY - 2 * int(stddevY)), (255, 102, 255), 3)
+    print("Saving image as output_false_colour_centroid.png.")
+    cv2.imwrite('./Data/output_false_colour_centroid_std_devs.png', modified_img)
+
+# end of analysis - begin saving results
+
+now = datetime.now()
+current_time = now.strftime("%H:%M:%S")
+current_date = now.strftime("%Y-%m-%d")
+
+csv_exists = os.path.isfile('./Data/' + current_date + '_outputData.csv')  # checks if CSV for today exists.
+with open('./Data/' + current_date + '_outputData.csv', 'a', newline='') as f:
+    writer = csv.writer(f)
+    if csv_exists is False:  # writes in the header if the CSV is new and has no data in it
+        writer.writerow(['Time', 'Centroid X', 'Centroid Y', 'Std Dev X', 'Std Dev Y'])
+    writer.writerow([current_time, centroidX, centroidY, stddevX, stddevY])
 
 end = timer()
-print("Elapsed time:", end - start,"seconds")
+print("Elapsed time:", end - start, "seconds")
 
