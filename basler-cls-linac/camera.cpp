@@ -42,6 +42,8 @@ public:
 			const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
 			std::cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << std::endl;
 			std::cout << std::endl;
+			// Display the grabbed image.
+			Pylon::DisplayImage(1, ptrGrabResult);
 			// Save image?
 			CImagePersistence::Save(ImageFileFormat_Png, "GrabbedImage.png", ptrGrabResult);
 		}
