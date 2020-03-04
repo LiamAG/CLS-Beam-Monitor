@@ -23,8 +23,6 @@ using namespace Pylon;
 // Standard namespace
 using namespace std;
 
-// Name of pylon feature stream file
-const char streamFile[] = "camerasetting.pfs";
 
 class CImageEventPrinter : public CImageEventHandler
 {
@@ -45,7 +43,7 @@ public:
 			// Display the grabbed image.
 			Pylon::DisplayImage(1, ptrGrabResult);
 			// Save image?
-			CImagePersistence::Save(ImageFileFormat_Png, "GrabbedImage.png", ptrGrabResult);
+			CImagePersistence::Save(ImageFileFormat_Png, "test_caps/GrabbedImage.png", ptrGrabResult);
 		}
 		else
 		{
@@ -54,6 +52,9 @@ public:
 	}
 };
 
+
+// Name of pylon feature stream file
+const std::string streamFile = "camerasetting.pfs";
 
 int main(int argc, char* argv[])
 {
@@ -78,40 +79,27 @@ int main(int argc, char* argv[])
 
 		// Set up grab result pointer
 		CGrabResultPtr ptrGrabResult;
-		if (camera.CanWaitForFrameTriggerReady())
+
+		// Start the grabbing using the grab loop thread, by setting the grabLoopType parameter
+		// to GrabLoop_ProvidedByInstantCamera. The grab results are delivered to the image event handlers.
+		// The GrabStrategy_OneByOne default grab strategy is used.
+		camera.StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
+
+		cerr << endl << "Enter \"t\" to trigger the camera or \"e\" to exit and press enter? (t/e)" << endl << endl;
+
+		// Wait for user input to trigger the camera or exit the program.
+		// The grabbing is stopped, the device is closed and destroyed automatically when the camera object goes out of scope.
+		char key;
+		do
 		{
-			// Start the grabbing using the grab loop thread, by setting the grabLoopType parameter
-			// to GrabLoop_ProvidedByInstantCamera. The grab results are delivered to the image event handlers.
-			// The GrabStrategy_OneByOne default grab strategy is used.
-			camera.StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
-
-			cerr << endl << "Enter \"t\" to trigger the camera or \"e\" to exit and press enter? (t/e)" << endl << endl;
-
-			// Wait for user input to trigger the camera or exit the program.
-			// The grabbing is stopped, the device is closed and destroyed automatically when the camera object goes out of scope.
-			char key;
-			do
+			cin.get(key);
+			if ((key == 't' || key == 'T'))
 			{
-				cin.get(key);
-				if ((key == 't' || key == 'T'))
-				{
-					// Execute the software trigger. Wait up to 500 ms for the camera to be ready for trigger.
-					if (camera.WaitForFrameTriggerReady(500, TimeoutHandling_ThrowException))
-					{
-						camera.ExecuteSoftwareTrigger();
-					}
-				}
+				// Execute the software trigger
+				camera.ExecuteSoftwareTrigger();
+			}
+		} while ((key != 'e') && (key != 'E'));
 
-			} while ((key != 'e') && (key != 'E'));
-		}
-		else
-		{
-			// See the documentation of CInstantCamera::CanWaitForFrameTriggerReady() for more information.
-			cout << endl;
-			cout << "This sample can only be used with cameras that can be queried whether they are ready to accept the next frame trigger.";
-			cout << endl;
-			cout << endl;
-		}
 	}
 	catch (const GenericException &e)
 	{
