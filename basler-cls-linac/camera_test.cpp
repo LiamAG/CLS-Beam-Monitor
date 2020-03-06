@@ -3,26 +3,31 @@
 /*
 	Author:		   Liam Graham
 	Date Created:  March 3, 2020
-	Date Modified: March 3, 2020
+	Date Modified: March 5, 2020
 	Description:
-	This file handles end-to-end operation of the Basler camera
+	This file is meant to test functionality of the Basler camera
 	used with the 2019-2020 EP Capstone project at the CLS.
-	Currently, the program grabs images every second, saving them 
-	to a hardcoded output directory.
+	
 */
 
+#include <iostream>
+#include <ctime>
 // Include files to use the pylon API
 #include <pylon/PylonIncludes.h>
 #ifdef PYLON_WIN_BUILD
 #	include <pylon/PylonGUI.h>
 #endif
 
-// Namespace for using pylong objects
+// Namespace for using pylon objects
 using namespace Pylon;
 
 // Standard namespace
 using namespace std;
 
+
+// Name of pylon feature stream file
+const char streamFile[] = "PylonSettings.pfs";
+const char output[] = "test_caps/grabbedImage.png";
 
 class CImageEventPrinter : public CImageEventHandler
 {
@@ -40,10 +45,12 @@ public:
 			const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
 			std::cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << std::endl;
 			std::cout << std::endl;
+
 			// Display the grabbed image.
 			Pylon::DisplayImage(1, ptrGrabResult);
-			// Save image?
-			CImagePersistence::Save(ImageFileFormat_Png, "test_caps/GrabbedImage.png", ptrGrabResult);
+			// Save image
+			CImagePersistence::Save(ImageFileFormat_Png, output, ptrGrabResult);
+
 		}
 		else
 		{
@@ -52,9 +59,6 @@ public:
 	}
 };
 
-
-// Name of pylon feature stream file
-const std::string streamFile = "camerasetting.pfs";
 
 int main(int argc, char* argv[])
 {
@@ -69,8 +73,12 @@ int main(int argc, char* argv[])
 		// Create an instant camera object
 		CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
 
+		camera.Open();
+		CFeaturePersistence::Load(streamFile, &camera.GetNodeMap(), true);
+		camera.Close();
+
 		// Register software triggering configurations
-		camera.RegisterConfiguration(new CSoftwareTriggerConfiguration, RegistrationMode_ReplaceAll, Cleanup_Delete);
+		camera.RegisterConfiguration(new CSoftwareTriggerConfiguration, RegistrationMode_Append, Cleanup_Delete);
 		camera.RegisterImageEventHandler(new CImageEventPrinter, RegistrationMode_Append, Cleanup_Delete);
 
 
