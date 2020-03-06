@@ -70,10 +70,11 @@ public:
 	}
 };
 
+CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
+CGrabResultPtr ptrGrabResult;
+
 void setupReview(void)
 {
-	CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-	CGrabResultPtr ptrGrabResult;
 	// Register preset review configuration
 	camera.Open();
 	CFeaturePersistence::Load(reviewConfig, &camera.GetNodeMap(), true);
@@ -85,8 +86,6 @@ void setupReview(void)
 
 void setupBackground(void)
 {
-	CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-	CGrabResultPtr ptrGrabResult;
 	// set camera up for single frame acquisition and background image events
 	camera.Open();
 	CFeaturePersistence::Load(backgroundConfig, &camera.GetNodeMap(), true);
@@ -97,8 +96,12 @@ void setupBackground(void)
 
 void setupDiagnostic(void)
 {
-	CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-	CGrabResultPtr ptrGrabResult;
 	// figure out how to set up for hardware acquisition OR just make a file you're happy with
 	camera.RegisterImageEventHandler(new CImageEventDiagnostic, RegistrationMode_Append, Cleanup_Delete);
+}
+
+
+void runBackground(void)
+{
+	camera.GrabOne(1000, ptrGrabResult);
 }

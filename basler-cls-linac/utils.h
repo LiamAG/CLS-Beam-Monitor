@@ -25,17 +25,3 @@ void setupDiagnostic();
 void runReview();
 void runBackground();
 void runDiagnostic();
-/*
-class CImageEventBackground : public CImageEventHandler
-{
-public:
-	virtual void OnImageGrabbed(CInstantCamera& camera, const CGrabResultPtr& ptrGrabResult);
-};
-
-
-class CImageEventDiagnostic : public CImageEventHandler
-{
-public:
-	virtual void OnImageGrabbed(CInstantCamera& camera, const CGrabResultPtr& ptrGrabResult);
-
-*/

@@ -23,16 +23,14 @@ using namespace Pylon;
 
 void cameraSetup(char option)
 {
-	// create camera device
-	CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
 	// setup configuration appropriate to the selected option
 	if ((option == 'r') || (option == 'R'))
 	{
-		// Run review mode setup function
+		setupReview();
 	}
 	else if ((option == 'b') || (option == 'B'))
 	{
-		// Run background mode setup function
+		setupBackground();
 	}
 	else if ((option == 'd') || (option == 'D'))
 	{
@@ -53,7 +51,7 @@ void cameraRun(char option)
 	}
 	else if ((option == 'b') || (option == 'B'))
 	{
-		// Execute in background mode
+		runBackground();
 	}
 	else if ((option == 'd') || (option == 'D'))
 	{
