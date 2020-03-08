@@ -3,7 +3,7 @@
 /*
 	Author:	       Liam Graham
 	Date Created:  March 5, 2020
-	Date Modified: March 5, 2020
+	Date Modified: March 8 2020
 	Description:
 		TODO: Write file description
 */
@@ -133,12 +133,39 @@ void setupTestGrab(CInstantCamera& camera)
 
 void setupDiagnostic(CInstantCamera& camera)
 {
+	/*
 	camera.Open();
 	cout << "Camera opened \n";
 	CFeaturePersistence::Load(diagnosticFile, &camera.GetNodeMap(), true);
 	cout << "Features loaded successfully \n";
 	camera.Close();
 	cout << "Camera closed \n";
+	*/
+	// Register default camera configuration
+	camera.RegisterConfiguration(new CConfigurationEventHandler, RegistrationMode_ReplaceAll, Cleanup_Delete);
+	// Configure camera to acquire frames based on frame start triggers on line 3
+	camera.Open();
+	INodeMap& nodemap = camera.GetNodeMap();
+	// Set GPIO Line 3 as input
+	CEnumerationPtr(nodemap.GetNode("LineSelector"))->FromString("Line3");
+	CEnumerationPtr(nodemap.GetNode("LineMode"))->FromString("Input");
+	// Set up continuous aquisition
+	CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))->FromString("Continuous");
+	// Turn off acquisition start triggers
+	CEnumerationPtr(nodemap.GetNode("TriggerSelector"))->FromString("AcquisitionStart");
+	CEnumerationPtr(nodemap.GetNode("TriggerMode"))->FromString("Off");
+	// Turn on frame start triggers and set source to line 3 rising edge with a 300us delay
+	CEnumerationPtr(nodemap.GetNode("TriggerSelector"))->FromString("FrameStart");
+	CEnumerationPtr(nodemap.GetNode("TriggerMode"))->FromString("On");
+	CEnumerationPtr(nodemap.GetNode("TriggerSource"))->FromString("Line3");
+	CEnumerationPtr(nodemap.GetNode("TriggerActivation"))->FromString("RisingEdge");
+	CFloatPtr(nodemap.GetNode("TriggerDelayAbs"))->SetValue(300.0);
+
+	// Set exposure mode and exposure time to 500us
+	CEnumerationPtr(nodemap.GetNode("ExposureMode"))->FromString("Timed");
+	CFloatPtr(nodemap.GetNode("ExposureTimeAbs"))->SetValue(500.0);
+	camera.Close();
+	// Register custom event handler for diagnostic images
 	camera.RegisterImageEventHandler(new CImageEventHandler, RegistrationMode_ReplaceAll, Cleanup_Delete);
 	cout << "Diagnostic image event handler successfully registered.\n";
 }
@@ -192,16 +219,24 @@ int main(int argc, char* argv[])
 			}
 			else if (key == 'd')
 			{
-			setupDiagnostic(camera);
-			camera.MaxNumBuffer = 1;
-				camera.StartGrabbing(GrabStrategy_OneByOne);
-				cout << "Grabbing images on line 3 rising edge. Enter \'e'\ to stop.\n";
-				while (true)
+				setupDiagnostic(camera);
+				camera.Open();
+				INodeMap& nodemap = camera.GetNodeMap();
+				char command;
+				bool acquire = true;
+				// Switch on image acquistion, camera will wait for frame start trigger signals during this time
+				cout << "Begin acquisition of diagnostic images. Enter \"e\" to exit.\n";
+				CCommandPtr(nodemap.GetNode("AcquisitionStart"))->Execute();
+				while(acquire)
 				{
-					camera.RetrieveResult(INFINITE, ptrGrabResult);
-					Pylon::DisplayImage(1, ptrGrabResult);
-					CImagePersistence::Save(ImageFileFormat_Png, diagnosticImage, ptrGrabResult);
+					cin.get(command);
+					if ((command == 'e') || (command == 'E'))
+					{
+						acquire = false;
+						CCommandPtr(nodemap.GetNode("AcquisitionStop"))->Execute();
+					}
 				}
+
 			}
 			cerr << endl << "Welcome back, please select a new execution mode, or enter \"e\" to exit." << endl;
 		} while ((key != 'e') && (key != 'E'));
