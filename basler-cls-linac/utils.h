@@ -7,7 +7,7 @@
 	Description:
 		TODO: Write file description
 */
-
+/*
 #pragma once
 // Pylon settings files
 #include <pylon/PylonIncludes.h>
@@ -25,3 +25,4 @@ void setupDiagnostic();
 void runReview();
 void runBackground();
 void runDiagnostic();
+*/

@@ -7,7 +7,7 @@
 	Description:
 		TODO: Write file description
 */
-
+/*
 #include <pylon/PylonIncludes.h>
 //#include "ImageHandlers.h"
 #ifdef PYLON_WIN_BUILD
@@ -105,3 +105,4 @@ void runBackground(void)
 {
 	camera.GrabOne(1000, ptrGrabResult);
 }
+*/
