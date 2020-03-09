@@ -1,4 +1,4 @@
-// app.cpp
+// beam-doctor.cpp
 
 /*
 	Author:	       Liam Graham
@@ -146,11 +146,15 @@ void setupDiagnostic(CInstantCamera& camera)
 	// Configure camera to acquire frames based on frame start triggers on line 3
 	camera.Open();
 	INodeMap& nodemap = camera.GetNodeMap();
+	// Set up continuous aquisition
+	CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))->FromString("Continuous");
+	CFeaturePersistence::Load(diagnosticFile, &camera.GetNodeMap(), true);
+	/*
 	// Set GPIO Line 3 as input
 	CEnumerationPtr(nodemap.GetNode("LineSelector"))->FromString("Line3");
 	CEnumerationPtr(nodemap.GetNode("LineMode"))->FromString("Input");
-	// Set up continuous aquisition
-	CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))->FromString("Continuous");
+
+
 	// Turn off acquisition start triggers
 	CEnumerationPtr(nodemap.GetNode("TriggerSelector"))->FromString("AcquisitionStart");
 	CEnumerationPtr(nodemap.GetNode("TriggerMode"))->FromString("Off");
@@ -164,10 +168,11 @@ void setupDiagnostic(CInstantCamera& camera)
 	// Set exposure mode and exposure time to 500us
 	CEnumerationPtr(nodemap.GetNode("ExposureMode"))->FromString("Timed");
 	CFloatPtr(nodemap.GetNode("ExposureTimeAbs"))->SetValue(500.0);
+	*/
 	camera.Close();
 	// Register custom event handler for diagnostic images
 	camera.RegisterImageEventHandler(new CImageEventHandler, RegistrationMode_ReplaceAll, Cleanup_Delete);
-	cout << "Diagnostic image event handler successfully registered.\n";
+	//cout << "Diagnostic image event handler successfully registered.\n";
 }
 
 int main(int argc, char* argv[])
@@ -227,17 +232,22 @@ int main(int argc, char* argv[])
 				// Switch on image acquistion, camera will wait for frame start trigger signals during this time
 				cout << "Begin acquisition of diagnostic images. Enter \"e\" to exit.\n";
 				//CCommandPtr(nodemap.GetNode("AcquisitionStart"))->Execute();
-				camera.StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
-				cout << "Successful grab command\n";
+				camera.StartGrabbing(GrabStrategy_LatestImageOnly);
 				while(acquire)
 				{
-					cin.get(command);
-					if ((command == 'e') || (command == 'E'))
+					// Wait for an image and then retrieve it. A timeout of 1000 ms is used.
+					camera.RetrieveResult(1000, ptrGrabResult, TimeoutHandling_ThrowException);
+					if (ptrGrabResult->GrabSucceeded())
 					{
-						acquire = false;
-						//CCommandPtr(nodemap.GetNode("AcquisitionStop"))->Execute();
-						camera.StopGrabbing();
-						camera.Close();
+						// Access the image data.
+						cout << "Got one!\n";
+						// Display the grabbed image.
+						Pylon::DisplayImage(1, ptrGrabResult);
+						CImagePersistence::Save(ImageFileFormat_Png, diagnosticImage, ptrGrabResult);
+					}
+					else
+					{
+						cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
 					}
 				}
 
