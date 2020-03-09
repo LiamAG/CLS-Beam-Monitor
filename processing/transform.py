@@ -45,6 +45,6 @@ def perspective_transform(image, pts):
 def brightness_difference(image1, image2):
 
     result_img = cv2.absdiff(image1, image2)
-    threshold, result_img = cv2.threshold(result_img, 15, 255, cv2.THRESH_TOZERO)
+    threshold, result_img = cv2.threshold(result_img, 30, 255, cv2.THRESH_TOZERO)
 
     return result_img

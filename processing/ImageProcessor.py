@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import matplotlib
 import csv
 import os.path
 import transform
@@ -35,6 +36,7 @@ def file_made(event):
     gaussian_smooth = False
     angle_correct = True
     map_colours = True
+    draw_contours = True
     draw_centroid_std_devs = True
 
     if background_sub:
@@ -49,10 +51,8 @@ def file_made(event):
         initialstddevX = np.sqrt(int(M["mu20"] / M["m00"]))
         initialstddevY = np.sqrt(int(M["mu02"] / M["m00"]))
     else:
-        print("Empty image")
+        print("Pure black image - no processing has been performed. ")
         return
-
-        
 
     if angle_correct:  # Uses a set of 4 pre-defined points to generate a rectangular ROI. corrects the angle if the 4 points are not rectangular.
         pts = np.float32(
@@ -86,8 +86,9 @@ def file_made(event):
         print("Saving image as ./Data/output_false_colour.png.")
         cv2.imwrite('./Data/output_false_colour.png', modified_img)
 
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    modified_image = cv2.drawContours(modified_img, contours, -1, (255, 102, 255), 2)
+    if draw_contours:
+        contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        modified_image = cv2.drawContours(modified_img, contours, -1, (255, 102, 255), 2)
 
     if draw_centroid_std_devs:
         modified_img = cv2.circle(modified_img, (centroidX, centroidY), 20, (255, 102, 255),
