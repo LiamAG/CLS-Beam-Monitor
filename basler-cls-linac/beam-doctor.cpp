@@ -221,26 +221,29 @@ int main(int argc, char* argv[])
 			{
 				setupDiagnostic(camera);
 				camera.Open();
-				INodeMap& nodemap = camera.GetNodeMap();
+				//INodeMap& nodemap = camera.GetNodeMap();
 				char command;
 				bool acquire = true;
 				// Switch on image acquistion, camera will wait for frame start trigger signals during this time
 				cout << "Begin acquisition of diagnostic images. Enter \"e\" to exit.\n";
-				CCommandPtr(nodemap.GetNode("AcquisitionStart"))->Execute();
+				//CCommandPtr(nodemap.GetNode("AcquisitionStart"))->Execute();
+				camera.StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
+				cout << "Successful grab command\n";
 				while(acquire)
 				{
 					cin.get(command);
 					if ((command == 'e') || (command == 'E'))
 					{
 						acquire = false;
-						CCommandPtr(nodemap.GetNode("AcquisitionStop"))->Execute();
+						//CCommandPtr(nodemap.GetNode("AcquisitionStop"))->Execute();
+						camera.StopGrabbing();
+						camera.Close();
 					}
 				}
 
 			}
 			cerr << endl << "Welcome back, please select a new execution mode, or enter \"e\" to exit." << endl;
 		} while ((key != 'e') && (key != 'E'));
-		camera.StopGrabbing();
 
 	}
 	catch (const GenericException & e)
